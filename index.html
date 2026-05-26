@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Portafolio Diana Ramírez</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="description" content="Portafolio de Diana Ramírez — Realizador Cinematográfico y Audiovisual">
   <meta name="theme-color" content="#000000">
 
@@ -33,22 +33,20 @@
       margin: 0;
       padding: 0;
       width: 100%;
+      height: 100%;
+      overflow: hidden;
       background: var(--bg);
       color: var(--fg);
       font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    /* ---------- DESKTOP MODE (slide presentation) ---------- */
-    body.desktop-mode {
-      height: 100%;
-      overflow: hidden;
       -webkit-user-select: none;
       user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: pan-y;
+      overscroll-behavior: none;
     }
-    body.desktop-mode html { height: 100%; }
 
-    body.desktop-mode::before {
+    /* Vignette for the screening-room feel */
+    body::before {
       content: '';
       position: fixed;
       inset: 0;
@@ -57,7 +55,7 @@
       z-index: 2;
     }
 
-    body.desktop-mode #viewer {
+    #viewer {
       position: fixed;
       inset: 0;
       display: flex;
@@ -67,52 +65,28 @@
       z-index: 1;
     }
 
-    body.desktop-mode .page-wrapper {
+    .page-wrapper {
       position: relative;
       box-shadow: var(--shadow);
       transition: opacity 0.25s ease;
     }
-    body.desktop-mode .page-wrapper.swapping { opacity: 0; }
+    .page-wrapper.swapping { opacity: 0; }
 
-    /* ---------- MOBILE MODE (vertical scroll) ---------- */
-    body.mobile-mode {
-      min-height: 100%;
-      overflow-y: auto;
-      overflow-x: hidden;
-    }
-
-    body.mobile-mode #viewer {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 8px 0 24px;
-      gap: 8px;
-      width: 100%;
-    }
-
-    body.mobile-mode .page-wrapper {
-      position: relative;
-      max-width: 100%;
-      background: #0a0a0a;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    }
-
-    /* ---------- COMMON: canvas + annotation layer ---------- */
     .page-wrapper canvas {
       display: block;
       width: 100%;
       height: 100%;
     }
 
+    /* Annotation layer (PDF links) */
     .annotation-layer {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      pointer-events: none; /* solo los <a> hijos reciben clics */
+      pointer-events: none;
     }
-
     .pdf-link {
       position: absolute;
       display: block;
@@ -120,7 +94,7 @@
       cursor: pointer;
       border-radius: 4px;
       transition: background 0.15s ease, box-shadow 0.15s ease;
-      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.15);
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
     }
     @media (hover: hover) {
       .pdf-link:hover {
@@ -129,7 +103,7 @@
       }
     }
 
-    /* ---------- Loader ---------- */
+    /* Loader */
     #loader {
       position: fixed;
       top: 50%;
@@ -149,7 +123,7 @@
     #loader.active { opacity: 1; }
     @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
 
-    /* ---------- Desktop controls bar ---------- */
+    /* Controls bar */
     #controls {
       position: fixed;
       bottom: max(20px, env(safe-area-inset-bottom));
@@ -170,10 +144,8 @@
       transition: opacity 0.5s ease, transform 0.5s ease;
     }
     #controls.visible { opacity: 1; transform: translate(-50%, 0); }
-    #controls.idle { opacity: 0.15; }
+    #controls.idle { opacity: 0.2; }
     #controls.idle:hover { opacity: 1; }
-
-    body.mobile-mode #controls { display: none; }
 
     .btn {
       background: transparent;
@@ -195,6 +167,12 @@
     .btn:disabled { opacity: 0.25; cursor: default; }
     .btn svg { width: 18px; height: 18px; pointer-events: none; }
 
+    /* Touch devices: bigger tap targets */
+    @media (pointer: coarse) {
+      .btn { width: 44px; height: 44px; }
+      .btn svg { width: 20px; height: 20px; }
+    }
+
     .separator {
       width: 1px;
       height: 20px;
@@ -215,30 +193,7 @@
     }
     #page-info .current { color: var(--fg); }
 
-    /* ---------- Mobile floating download ---------- */
-    #mobile-dl {
-      display: none;
-      position: fixed;
-      top: max(12px, env(safe-area-inset-top));
-      right: max(12px, env(safe-area-inset-right));
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: var(--control-bg);
-      backdrop-filter: blur(20px) saturate(140%);
-      -webkit-backdrop-filter: blur(20px) saturate(140%);
-      border: 1px solid var(--control-border);
-      color: var(--fg);
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      z-index: 30;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-    }
-    #mobile-dl svg { width: 18px; height: 18px; }
-    body.mobile-mode #mobile-dl { display: flex; }
-
-    /* ---------- Hint ---------- */
+    /* Keyboard hint (desktop only) */
     #hint {
       position: fixed;
       bottom: 90px;
@@ -254,9 +209,53 @@
       white-space: nowrap;
     }
     #hint.visible { opacity: 1; }
-    body.mobile-mode #hint { display: none; }
+    @media (hover: none) { #hint { display: none; } }
 
-    /* ---------- Error ---------- */
+    /* ---------- Rotation hint (portrait phones) ---------- */
+    #rotate-hint {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      background: rgba(0, 0, 0, 0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 40;
+      padding: 40px;
+      text-align: center;
+    }
+    /* Show only on small touch screens in portrait */
+    @media (pointer: coarse) and (orientation: portrait) and (max-width: 900px) {
+      #rotate-hint { display: flex; }
+    }
+
+    #rotate-hint .phone-icon {
+      width: 64px;
+      height: 64px;
+      animation: rotate-phone 2.4s ease-in-out infinite;
+    }
+    @keyframes rotate-phone {
+      0%, 30% { transform: rotate(0deg); }
+      50%, 80% { transform: rotate(-90deg); }
+      100% { transform: rotate(-90deg); }
+    }
+
+    #rotate-hint .title {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    #rotate-hint .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 280px;
+      line-height: 1.5;
+    }
+
+    /* Error state */
     #error {
       position: fixed;
       top: 50%;
@@ -295,7 +294,16 @@
 
   <div id="hint">← →   navegar   ·   F   pantalla completa</div>
 
-  <!-- Desktop controls (hidden on mobile) -->
+  <!-- Rotation prompt for portrait phones -->
+  <div id="rotate-hint" aria-hidden="true">
+    <svg class="phone-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="7" y="2" width="10" height="20" rx="2"/>
+      <line x1="11" y1="18" x2="13" y2="18"/>
+    </svg>
+    <div class="title">Gira tu celular</div>
+    <div class="subtitle">El portafolio se ve mejor en horizontal</div>
+  </div>
+
   <div id="controls" role="toolbar" aria-label="Controles">
     <button class="btn" id="prev-btn" aria-label="Anterior">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -313,20 +321,11 @@
     </a>
   </div>
 
-  <!-- Mobile floating download -->
-  <a id="mobile-dl" href="portafolio-diana-ramirez.pdf" download aria-label="Descargar PDF">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-  </a>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     const PDF_URL = 'portafolio-diana-ramirez.pdf';
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-    // Detect mobile / touch — decided once on load
-    const isMobile = window.matchMedia('(max-width: 900px), (pointer: coarse)').matches;
-    document.body.classList.add(isMobile ? 'mobile-mode' : 'desktop-mode');
 
     const viewer = document.getElementById('viewer');
     const loader = document.getElementById('loader');
@@ -341,9 +340,14 @@
 
     let pdfDoc = null;
     let totalPages = 0;
+    let currentPage = 1;
     const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
 
-    // ---------- Annotation rendering (shared) ----------
+    let wrapper = null;
+    let rendering = false;
+    let pending = null;
+
+    // ---------- Annotation layer (PDF links) ----------
     async function renderAnnotations(page, displayViewport, layerEl) {
       layerEl.innerHTML = '';
       const annotations = await page.getAnnotations();
@@ -354,14 +358,11 @@
         const a = document.createElement('a');
         a.className = 'pdf-link';
 
-        // External URL
         if (ann.url) {
           a.href = ann.url;
           a.target = '_blank';
           a.rel = 'noopener noreferrer';
-        }
-        // Internal destination (link to another page within the PDF)
-        else if (ann.dest) {
+        } else if (ann.dest) {
           a.href = '#';
           a.addEventListener('click', async (e) => {
             e.preventDefault();
@@ -371,290 +372,176 @@
                 : ann.dest;
               if (dest && dest[0]) {
                 const pageIndex = await pdfDoc.getPageIndex(dest[0]);
-                if (typeof goToPage === 'function') goToPage(pageIndex + 1);
-                else {
-                  // mobile: scroll to that page
-                  const target = document.querySelector(`.page-wrapper[data-page="${pageIndex + 1}"]`);
-                  target?.scrollIntoView({ behavior: 'smooth' });
-                }
+                goToPage(pageIndex + 1);
               }
             } catch (err) { console.error(err); }
           });
-        } else {
-          continue;
-        }
+        } else continue;
 
-        // Convert PDF coords to viewport coords
         const r = pdfjsLib.Util.normalizeRect(
           displayViewport.convertToViewportRectangle(ann.rect)
         );
-        const left = r[0];
-        const top = r[1];
-        const width = r[2] - r[0];
-        const height = r[3] - r[1];
-
-        // Express as percentages so they stay aligned if the wrapper resizes
-        a.style.left = (left / displayViewport.width * 100) + '%';
-        a.style.top = (top / displayViewport.height * 100) + '%';
-        a.style.width = (width / displayViewport.width * 100) + '%';
-        a.style.height = (height / displayViewport.height * 100) + '%';
+        // Percentages so links stay aligned across resizes
+        a.style.left = (r[0] / displayViewport.width * 100) + '%';
+        a.style.top = (r[1] / displayViewport.height * 100) + '%';
+        a.style.width = ((r[2] - r[0]) / displayViewport.width * 100) + '%';
+        a.style.height = ((r[3] - r[1]) / displayViewport.height * 100) + '%';
 
         layerEl.appendChild(a);
       }
     }
 
-    // ---------- Render a single page into its wrapper ----------
-    async function renderPageInto(pageNum, wrapper, fitMode) {
-      const page = await pdfDoc.getPage(pageNum);
-      const canvas = wrapper.querySelector('canvas');
-      const annLayer = wrapper.querySelector('.annotation-layer');
-      const ctx = canvas.getContext('2d', { alpha: false });
-
-      const baseViewport = page.getViewport({ scale: 1 });
-
-      let displayWidth, displayHeight;
-      if (fitMode === 'width') {
-        // Mobile: fit container width
-        const containerW = viewer.clientWidth || window.innerWidth;
-        displayWidth = Math.min(containerW, baseViewport.width * 1.5); // cap at 1.5x to avoid huge canvases
-        displayHeight = (baseViewport.height / baseViewport.width) * displayWidth;
-      } else {
-        // Desktop: fit both dimensions
-        const padding = 32;
-        const availW = window.innerWidth - padding * 2;
-        const availH = window.innerHeight - padding * 2;
-        const scale = Math.min(availW / baseViewport.width, availH / baseViewport.height);
-        displayWidth = baseViewport.width * scale;
-        displayHeight = baseViewport.height * scale;
-      }
-
-      const dispScale = displayWidth / baseViewport.width;
-      const displayViewport = page.getViewport({ scale: dispScale });
-      const renderViewport = page.getViewport({ scale: dispScale * DPR });
-
-      canvas.width = renderViewport.width;
-      canvas.height = renderViewport.height;
-      canvas.style.width = displayWidth + 'px';
-      canvas.style.height = displayHeight + 'px';
-
-      wrapper.style.width = displayWidth + 'px';
-      wrapper.style.height = displayHeight + 'px';
-
-      // Cancel any in-flight render on this wrapper
-      if (wrapper._renderTask) {
-        try { wrapper._renderTask.cancel(); } catch (e) {}
-      }
-      wrapper._renderTask = page.render({ canvasContext: ctx, viewport: renderViewport });
+    // ---------- Render current page (fit to viewport) ----------
+    async function renderPage(num) {
+      if (rendering) { pending = num; return; }
+      rendering = true;
+      loader.classList.add('active');
+      wrapper.classList.add('swapping');
 
       try {
-        await wrapper._renderTask.promise;
+        const page = await pdfDoc.getPage(num);
+        const canvas = wrapper.querySelector('canvas');
+        const annLayer = wrapper.querySelector('.annotation-layer');
+        const ctx = canvas.getContext('2d', { alpha: false });
+
+        const base = page.getViewport({ scale: 1 });
+        const padding = 24;
+        const availW = window.innerWidth - padding * 2;
+        const availH = window.innerHeight - padding * 2;
+        const scale = Math.min(availW / base.width, availH / base.height);
+        const displayW = base.width * scale;
+        const displayH = base.height * scale;
+
+        const displayViewport = page.getViewport({ scale });
+        const renderViewport = page.getViewport({ scale: scale * DPR });
+
+        canvas.width = renderViewport.width;
+        canvas.height = renderViewport.height;
+        canvas.style.width = displayW + 'px';
+        canvas.style.height = displayH + 'px';
+        wrapper.style.width = displayW + 'px';
+        wrapper.style.height = displayH + 'px';
+
+        if (wrapper._task) { try { wrapper._task.cancel(); } catch(e){} }
+        wrapper._task = page.render({ canvasContext: ctx, viewport: renderViewport });
+        await wrapper._task.promise;
+        wrapper._task = null;
+
         await renderAnnotations(page, displayViewport, annLayer);
+
+        await new Promise(r => requestAnimationFrame(r));
+        wrapper.classList.remove('swapping');
+
+        currentEl.textContent = num;
+        pageInfo.lastChild.textContent = ' / ' + totalPages;
+        prevBtn.disabled = num <= 1;
+        nextBtn.disabled = num >= totalPages;
       } catch (err) {
-        if (err?.name !== 'RenderingCancelledException') throw err;
+        if (err?.name !== 'RenderingCancelledException') console.error(err);
       } finally {
-        wrapper._renderTask = null;
+        rendering = false;
+        loader.classList.remove('active');
+        if (pending !== null && pending !== num) {
+          const next = pending; pending = null;
+          renderPage(next);
+        } else pending = null;
       }
     }
 
-    // ============================================================
-    //   DESKTOP MODE  (single page slide)
-    // ============================================================
-    let currentPage = 1;
-    let goToPage = null;
-
-    async function setupDesktop() {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'page-wrapper';
-      wrapper.innerHTML = '<canvas></canvas><div class="annotation-layer"></div>';
-      viewer.appendChild(wrapper);
-
-      let rendering = false;
-      let pending = null;
-
-      async function render(num) {
-        if (rendering) { pending = num; return; }
-        rendering = true;
-        loader.classList.add('active');
-        wrapper.classList.add('swapping');
-
-        try {
-          await renderPageInto(num, wrapper, 'contain');
-          await new Promise(r => requestAnimationFrame(r));
-          wrapper.classList.remove('swapping');
-          currentEl.textContent = num;
-          pageInfo.lastChild.textContent = ' / ' + totalPages;
-          prevBtn.disabled = num <= 1;
-          nextBtn.disabled = num >= totalPages;
-        } finally {
-          rendering = false;
-          loader.classList.remove('active');
-          if (pending !== null && pending !== num) {
-            const next = pending; pending = null;
-            render(next);
-          } else {
-            pending = null;
-          }
-        }
-      }
-
-      goToPage = (num) => {
-        if (num < 1 || num > totalPages || num === currentPage) return;
-        currentPage = num;
-        render(currentPage);
-      };
-      const nextPage = () => goToPage(currentPage + 1);
-      const prevPage = () => goToPage(currentPage - 1);
-
-      await render(1);
-      controls.classList.add('visible');
-
-      // First-load hint
-      setTimeout(() => hint.classList.add('visible'), 600);
-      setTimeout(() => hint.classList.remove('visible'), 4500);
-
-      // Buttons
-      prevBtn.addEventListener('click', prevPage);
-      nextBtn.addEventListener('click', nextPage);
-      fsBtn.addEventListener('click', () => {
-        if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(()=>{});
-        else document.exitFullscreen?.();
-      });
-
-      // Keyboard
-      document.addEventListener('keydown', (e) => {
-        if (e.metaKey || e.ctrlKey || e.altKey) return;
-        switch (e.key) {
-          case 'ArrowRight': case 'PageDown': case ' ':
-            e.preventDefault(); nextPage(); break;
-          case 'ArrowLeft': case 'PageUp':
-            e.preventDefault(); prevPage(); break;
-          case 'Home':
-            e.preventDefault(); goToPage(1); break;
-          case 'End':
-            e.preventDefault(); goToPage(totalPages); break;
-          case 'f': case 'F':
-            fsBtn.click(); break;
-        }
-      });
-
-      // Wheel (debounced) — counts as intentional, doesn't conflict with link clicks
-      let wheelAccum = 0, wheelTimer = null, wheelCD = false;
-      document.addEventListener('wheel', (e) => {
-        if (wheelCD) return;
-        wheelAccum += e.deltaY;
-        clearTimeout(wheelTimer);
-        wheelTimer = setTimeout(() => { wheelAccum = 0; }, 120);
-        if (Math.abs(wheelAccum) > 80) {
-          if (wheelAccum > 0) nextPage(); else prevPage();
-          wheelAccum = 0;
-          wheelCD = true;
-          setTimeout(() => { wheelCD = false; }, 350);
-        }
-      }, { passive: true });
-
-      // Resize → re-render
-      let resizeTimer;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => render(currentPage), 180);
-      });
-
-      // Idle controls
-      let idleTimer;
-      function wake() {
-        controls.classList.remove('idle');
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(() => controls.classList.add('idle'), 3000);
-      }
-      ['mousemove', 'keydown'].forEach(ev =>
-        document.addEventListener(ev, wake, { passive: true })
-      );
-      wake();
+    function goToPage(num) {
+      if (num < 1 || num > totalPages || num === currentPage) return;
+      currentPage = num;
+      renderPage(currentPage);
     }
+    const nextPage = () => goToPage(currentPage + 1);
+    const prevPage = () => goToPage(currentPage - 1);
 
-    // ============================================================
-    //   MOBILE MODE  (all pages stacked, lazy-rendered)
-    // ============================================================
-    async function setupMobile() {
-      // Get page-1 dimensions to set placeholder aspect ratio
-      const firstPage = await pdfDoc.getPage(1);
-      const v = firstPage.getViewport({ scale: 1 });
-      const aspect = v.width / v.height;
-
-      const containerW = viewer.clientWidth || window.innerWidth;
-      const placeholderW = Math.min(containerW, v.width * 1.5);
-      const placeholderH = placeholderW / aspect;
-
-      // Create placeholders for all pages
-      for (let i = 1; i <= totalPages; i++) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'page-wrapper';
-        wrapper.dataset.page = i;
-        wrapper.style.width = placeholderW + 'px';
-        wrapper.style.height = placeholderH + 'px';
-        wrapper.innerHTML = '<canvas></canvas><div class="annotation-layer"></div>';
-        viewer.appendChild(wrapper);
-      }
-
-      loader.classList.remove('active');
-
-      // Lazy render with IntersectionObserver
-      const observer = new IntersectionObserver((entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting && !entry.target.dataset.rendered) {
-            const w = entry.target;
-            w.dataset.rendered = 'pending';
-            renderPageInto(parseInt(w.dataset.page), w, 'width')
-              .then(() => { w.dataset.rendered = 'done'; })
-              .catch((err) => {
-                console.error(err);
-                w.dataset.rendered = ''; // allow retry
-              });
-          }
-        }
-      }, { rootMargin: '600px 0px' });
-
-      viewer.querySelectorAll('.page-wrapper').forEach(w => observer.observe(w));
-
-      // Re-render on resize/orientation change
-      let resizeTimer;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-          // Recompute placeholder dimensions and re-render
-          const newW = Math.min(viewer.clientWidth || window.innerWidth, v.width * 1.5);
-          const newH = newW / aspect;
-          viewer.querySelectorAll('.page-wrapper').forEach(w => {
-            if (w.dataset.rendered === 'done') {
-              w.dataset.rendered = '';
-              renderPageInto(parseInt(w.dataset.page), w, 'width')
-                .then(() => { w.dataset.rendered = 'done'; });
-            } else if (!w.dataset.rendered) {
-              w.style.width = newW + 'px';
-              w.style.height = newH + 'px';
-            }
-          });
-        }, 250);
-      });
-    }
-
-    // ============================================================
-    //   INIT
-    // ============================================================
+    // ---------- Init ----------
     async function init() {
       try {
         loader.classList.add('active');
         pdfDoc = await pdfjsLib.getDocument(PDF_URL).promise;
         totalPages = pdfDoc.numPages;
 
-        if (isMobile) await setupMobile();
-        else await setupDesktop();
+        wrapper = document.createElement('div');
+        wrapper.className = 'page-wrapper';
+        wrapper.innerHTML = '<canvas></canvas><div class="annotation-layer"></div>';
+        viewer.appendChild(wrapper);
+
+        await renderPage(1);
+        controls.classList.add('visible');
+
+        // Keyboard hint (desktop only — hidden by CSS on touch devices)
+        setTimeout(() => hint.classList.add('visible'), 600);
+        setTimeout(() => hint.classList.remove('visible'), 4500);
       } catch (err) {
         console.error('Error loading PDF:', err);
         loader.classList.remove('active');
         errorEl.classList.add('active');
       }
     }
+
+    // ---------- Events ----------
+    prevBtn.addEventListener('click', prevPage);
+    nextBtn.addEventListener('click', nextPage);
+    fsBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(()=>{});
+      else document.exitFullscreen?.();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      switch (e.key) {
+        case 'ArrowRight': case 'PageDown': case ' ':
+          e.preventDefault(); nextPage(); break;
+        case 'ArrowLeft': case 'PageUp':
+          e.preventDefault(); prevPage(); break;
+        case 'Home':
+          e.preventDefault(); goToPage(1); break;
+        case 'End':
+          e.preventDefault(); goToPage(totalPages); break;
+        case 'f': case 'F':
+          fsBtn.click(); break;
+      }
+    });
+
+    // Wheel scrolling (desktop) — only registers as page change with strong intent
+    let wheelAccum = 0, wheelTimer = null, wheelCD = false;
+    document.addEventListener('wheel', (e) => {
+      if (wheelCD) return;
+      wheelAccum += e.deltaY;
+      clearTimeout(wheelTimer);
+      wheelTimer = setTimeout(() => { wheelAccum = 0; }, 120);
+      if (Math.abs(wheelAccum) > 80) {
+        if (wheelAccum > 0) nextPage(); else prevPage();
+        wheelAccum = 0;
+        wheelCD = true;
+        setTimeout(() => { wheelCD = false; }, 350);
+      }
+    }, { passive: true });
+
+    // Re-render on resize / orientation change
+    let resizeTimer;
+    function handleResize() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (pdfDoc && wrapper) renderPage(currentPage);
+      }, 180);
+    }
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    // Idle controls fade
+    let idleTimer;
+    function wake() {
+      controls.classList.remove('idle');
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => controls.classList.add('idle'), 3000);
+    }
+    ['mousemove', 'touchstart', 'keydown'].forEach(ev =>
+      document.addEventListener(ev, wake, { passive: true })
+    );
+    wake();
 
     init();
   </script>
