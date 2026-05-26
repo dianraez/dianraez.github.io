@@ -7,6 +7,12 @@
   <meta name="description" content="Portafolio de Diana Ramírez — Realizador Cinematográfico y Audiovisual">
   <meta name="theme-color" content="#000000">
 
+  <!-- PWA meta tags so users can "Add to Home Screen" for true fullscreen on iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diana Ramírez">
+  <meta name="mobile-web-app-capable" content="yes">
+
   <!-- FAVICONS -->
   <link rel="icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -45,7 +51,6 @@
       overscroll-behavior: none;
     }
 
-    /* Vignette for the screening-room feel */
     body::before {
       content: '';
       position: fixed;
@@ -71,20 +76,12 @@
       transition: opacity 0.25s ease;
     }
     .page-wrapper.swapping { opacity: 0; }
+    .page-wrapper canvas { display: block; width: 100%; height: 100%; }
 
-    .page-wrapper canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Annotation layer (PDF links) */
     .annotation-layer {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       pointer-events: none;
     }
     .pdf-link {
@@ -106,11 +103,9 @@
     /* Loader */
     #loader {
       position: fixed;
-      top: 50%;
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      width: 36px;
-      height: 36px;
+      width: 36px; height: 36px;
       border: 2px solid rgba(255, 255, 255, 0.12);
       border-top-color: var(--fg);
       border-radius: 50%;
@@ -123,7 +118,9 @@
     #loader.active { opacity: 1; }
     @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
 
-    /* Controls bar */
+    /* =========================================================
+       DESKTOP CONTROLS (centered bottom bar)
+       ========================================================= */
     #controls {
       position: fixed;
       bottom: max(20px, env(safe-area-inset-bottom));
@@ -151,8 +148,7 @@
       background: transparent;
       border: none;
       color: var(--fg);
-      width: 38px;
-      height: 38px;
+      width: 38px; height: 38px;
       border-radius: 50%;
       cursor: pointer;
       display: flex;
@@ -166,12 +162,6 @@
     .btn:active:not(:disabled) { transform: scale(0.92); }
     .btn:disabled { opacity: 0.25; cursor: default; }
     .btn svg { width: 18px; height: 18px; pointer-events: none; }
-
-    /* Touch devices: bigger tap targets */
-    @media (pointer: coarse) {
-      .btn { width: 44px; height: 44px; }
-      .btn svg { width: 20px; height: 20px; }
-    }
 
     .separator {
       width: 1px;
@@ -193,7 +183,7 @@
     }
     #page-info .current { color: var(--fg); }
 
-    /* Keyboard hint (desktop only) */
+    /* Desktop keyboard hint */
     #hint {
       position: fixed;
       bottom: 90px;
@@ -209,9 +199,62 @@
       white-space: nowrap;
     }
     #hint.visible { opacity: 1; }
-    @media (hover: none) { #hint { display: none; } }
 
-    /* ---------- Rotation hint (portrait phones) ---------- */
+    /* =========================================================
+       MOBILE CONTROLS (side arrows + corner buttons)
+       Hidden by default, shown via media query at bottom
+       ========================================================= */
+    .m-btn {
+      position: fixed;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: var(--fg);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      z-index: 30;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transition: opacity 0.5s ease, background 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .m-btn.visible { opacity: 0.85; }
+    .m-btn.idle { opacity: 0.25; }
+    .m-btn:disabled { opacity: 0.15 !important; pointer-events: none; }
+    .m-btn svg { width: 22px; height: 22px; pointer-events: none; }
+
+    /* Side arrows — vertically centered on each edge */
+    .m-side {
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    #m-prev { left: max(12px, env(safe-area-inset-left)); }
+    #m-next { right: max(12px, env(safe-area-inset-right)); }
+
+    /* Corner buttons */
+    .m-corner {
+      bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    #m-download { left: max(16px, env(safe-area-inset-left)); }
+    #m-fullscreen { right: max(16px, env(safe-area-inset-right)); }
+
+    /* Activate mobile UI on touch devices / small screens */
+    @media (pointer: coarse), (max-width: 900px) {
+      #controls { display: none !important; }
+      #hint { display: none !important; }
+      .m-btn { display: flex; }
+    }
+
+    /* =========================================================
+       ROTATION HINT (portrait phones)
+       ========================================================= */
     #rotate-hint {
       position: fixed;
       inset: 0;
@@ -227,11 +270,9 @@
       padding: 40px;
       text-align: center;
     }
-    /* Show only on small touch screens in portrait */
     @media (pointer: coarse) and (orientation: portrait) and (max-width: 900px) {
       #rotate-hint { display: flex; }
     }
-
     #rotate-hint .phone-icon {
       width: 64px;
       height: 64px;
@@ -242,24 +283,13 @@
       50%, 80% { transform: rotate(-90deg); }
       100% { transform: rotate(-90deg); }
     }
+    #rotate-hint .title { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+    #rotate-hint .subtitle { font-size: 14px; color: var(--muted); max-width: 280px; line-height: 1.5; }
 
-    #rotate-hint .title {
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
-    #rotate-hint .subtitle {
-      font-size: 14px;
-      color: var(--muted);
-      max-width: 280px;
-      line-height: 1.5;
-    }
-
-    /* Error state */
+    /* Error */
     #error {
       position: fixed;
-      top: 50%;
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
       padding: 24px;
@@ -276,7 +306,6 @@
       text-decoration: none;
       border: 1px solid var(--control-border);
       border-radius: 999px;
-      transition: background 0.2s;
     }
     #error a:hover { background: rgba(255, 255, 255, 0.08); }
   </style>
@@ -284,7 +313,6 @@
 
 <body>
   <div id="viewer"></div>
-
   <div id="loader"></div>
 
   <div id="error">
@@ -294,7 +322,6 @@
 
   <div id="hint">← →   navegar   ·   F   pantalla completa</div>
 
-  <!-- Rotation prompt for portrait phones -->
   <div id="rotate-hint" aria-hidden="true">
     <svg class="phone-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <rect x="7" y="2" width="10" height="20" rx="2"/>
@@ -304,22 +331,37 @@
     <div class="subtitle">El portafolio se ve mejor en horizontal</div>
   </div>
 
+  <!-- Desktop controls -->
   <div id="controls" role="toolbar" aria-label="Controles">
-    <button class="btn" id="prev-btn" aria-label="Anterior">
+    <button class="btn btn-prev" aria-label="Anterior">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <span id="page-info"><span class="current">—</span> / —</span>
-    <button class="btn" id="next-btn" aria-label="Siguiente">
+    <button class="btn btn-next" aria-label="Siguiente">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
     <span class="separator"></span>
-    <button class="btn" id="fullscreen-btn" aria-label="Pantalla completa">
+    <button class="btn btn-fullscreen" aria-label="Pantalla completa">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
     </button>
-    <a class="btn" id="download-btn" href="portafolio-diana-ramirez.pdf" download aria-label="Descargar PDF">
+    <a class="btn btn-download" href="portafolio-diana-ramirez.pdf" download aria-label="Descargar PDF">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     </a>
   </div>
+
+  <!-- Mobile controls (side arrows + corner buttons) -->
+  <button class="m-btn m-side btn-prev" id="m-prev" aria-label="Anterior">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <button class="m-btn m-side btn-next" id="m-next" aria-label="Siguiente">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+  <a class="m-btn m-corner btn-download" id="m-download" href="portafolio-diana-ramirez.pdf" download aria-label="Descargar PDF">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  </a>
+  <button class="m-btn m-corner btn-fullscreen" id="m-fullscreen" aria-label="Pantalla completa">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+  </button>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
@@ -334,9 +376,6 @@
     const hint = document.getElementById('hint');
     const pageInfo = document.getElementById('page-info');
     const currentEl = pageInfo.querySelector('.current');
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
-    const fsBtn = document.getElementById('fullscreen-btn');
 
     let pdfDoc = null;
     let totalPages = 0;
@@ -347,6 +386,60 @@
     let rendering = false;
     let pending = null;
 
+    // ---------- Fullscreen helpers (with vendor prefixes) ----------
+    function getFsElement() {
+      return document.fullscreenElement
+          || document.webkitFullscreenElement
+          || document.mozFullScreenElement
+          || document.msFullscreenElement
+          || null;
+    }
+    function requestFs(el) {
+      const fn = el.requestFullscreen
+              || el.webkitRequestFullscreen
+              || el.mozRequestFullScreen
+              || el.msRequestFullscreen;
+      if (!fn) return Promise.reject(new Error('Fullscreen API no soportada'));
+      try {
+        const result = fn.call(el);
+        return result instanceof Promise ? result : Promise.resolve();
+      } catch (e) { return Promise.reject(e); }
+    }
+    function exitFs() {
+      const fn = document.exitFullscreen
+              || document.webkitExitFullscreen
+              || document.mozCancelFullScreen
+              || document.msExitFullscreen;
+      if (!fn) return Promise.reject();
+      try {
+        const result = fn.call(document);
+        return result instanceof Promise ? result : Promise.resolve();
+      } catch (e) { return Promise.reject(e); }
+    }
+    function toggleFs() {
+      if (getFsElement()) {
+        exitFs().catch(() => {});
+      } else {
+        requestFs(document.documentElement).catch((err) => {
+          console.warn('Fullscreen falló:', err?.message || err);
+        });
+      }
+    }
+
+    // Detect if fullscreen is realistically supported (iOS Safari often returns
+    // a function that throws — we test by checking the property's existence,
+    // and we'll silently no-op on failure)
+    const fsSupported = !!(
+      document.documentElement.requestFullscreen ||
+      document.documentElement.webkitRequestFullscreen ||
+      document.documentElement.mozRequestFullScreen ||
+      document.documentElement.msRequestFullscreen
+    );
+    if (!fsSupported) {
+      // Hide both fullscreen buttons (desktop + mobile) if truly unsupported
+      document.querySelectorAll('.btn-fullscreen').forEach(b => b.style.display = 'none');
+    }
+
     // ---------- Annotation layer (PDF links) ----------
     async function renderAnnotations(page, displayViewport, layerEl) {
       layerEl.innerHTML = '';
@@ -354,7 +447,6 @@
 
       for (const ann of annotations) {
         if (ann.subtype !== 'Link') continue;
-
         const a = document.createElement('a');
         a.className = 'pdf-link';
 
@@ -381,17 +473,15 @@
         const r = pdfjsLib.Util.normalizeRect(
           displayViewport.convertToViewportRectangle(ann.rect)
         );
-        // Percentages so links stay aligned across resizes
         a.style.left = (r[0] / displayViewport.width * 100) + '%';
         a.style.top = (r[1] / displayViewport.height * 100) + '%';
         a.style.width = ((r[2] - r[0]) / displayViewport.width * 100) + '%';
         a.style.height = ((r[3] - r[1]) / displayViewport.height * 100) + '%';
-
         layerEl.appendChild(a);
       }
     }
 
-    // ---------- Render current page (fit to viewport) ----------
+    // ---------- Render page ----------
     async function renderPage(num) {
       if (rendering) { pending = num; return; }
       rendering = true;
@@ -405,7 +495,7 @@
         const ctx = canvas.getContext('2d', { alpha: false });
 
         const base = page.getViewport({ scale: 1 });
-        const padding = 24;
+        const padding = 20;
         const availW = window.innerWidth - padding * 2;
         const availH = window.innerHeight - padding * 2;
         const scale = Math.min(availW / base.width, availH / base.height);
@@ -434,8 +524,10 @@
 
         currentEl.textContent = num;
         pageInfo.lastChild.textContent = ' / ' + totalPages;
-        prevBtn.disabled = num <= 1;
-        nextBtn.disabled = num >= totalPages;
+
+        // Update prev/next disabled state on both desktop and mobile buttons
+        document.querySelectorAll('.btn-prev').forEach(b => b.disabled = num <= 1);
+        document.querySelectorAll('.btn-next').forEach(b => b.disabled = num >= totalPages);
       } catch (err) {
         if (err?.name !== 'RenderingCancelledException') console.error(err);
       } finally {
@@ -469,9 +561,12 @@
         viewer.appendChild(wrapper);
 
         await renderPage(1);
-        controls.classList.add('visible');
 
-        // Keyboard hint (desktop only — hidden by CSS on touch devices)
+        // Show controls (both desktop bar and mobile buttons)
+        controls.classList.add('visible');
+        document.querySelectorAll('.m-btn').forEach(b => b.classList.add('visible'));
+
+        // Desktop keyboard hint
         setTimeout(() => hint.classList.add('visible'), 600);
         setTimeout(() => hint.classList.remove('visible'), 4500);
       } catch (err) {
@@ -481,13 +576,11 @@
       }
     }
 
-    // ---------- Events ----------
-    prevBtn.addEventListener('click', prevPage);
-    nextBtn.addEventListener('click', nextPage);
-    fsBtn.addEventListener('click', () => {
-      if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(()=>{});
-      else document.exitFullscreen?.();
-    });
+    // ---------- Event bindings ----------
+    // Use class selectors so desktop AND mobile buttons get the same handlers
+    document.querySelectorAll('.btn-prev').forEach(b => b.addEventListener('click', prevPage));
+    document.querySelectorAll('.btn-next').forEach(b => b.addEventListener('click', nextPage));
+    document.querySelectorAll('.btn-fullscreen').forEach(b => b.addEventListener('click', toggleFs));
 
     document.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -501,11 +594,11 @@
         case 'End':
           e.preventDefault(); goToPage(totalPages); break;
         case 'f': case 'F':
-          fsBtn.click(); break;
+          toggleFs(); break;
       }
     });
 
-    // Wheel scrolling (desktop) — only registers as page change with strong intent
+    // Wheel (desktop only — passive scroll-to-change-page)
     let wheelAccum = 0, wheelTimer = null, wheelCD = false;
     document.addEventListener('wheel', (e) => {
       if (wheelCD) return;
@@ -531,12 +624,16 @@
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
 
-    // Idle controls fade
+    // Idle controls (auto-dim after 3s of inactivity)
     let idleTimer;
     function wake() {
       controls.classList.remove('idle');
+      document.querySelectorAll('.m-btn').forEach(b => b.classList.remove('idle'));
       clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => controls.classList.add('idle'), 3000);
+      idleTimer = setTimeout(() => {
+        controls.classList.add('idle');
+        document.querySelectorAll('.m-btn').forEach(b => b.classList.add('idle'));
+      }, 3000);
     }
     ['mousemove', 'touchstart', 'keydown'].forEach(ev =>
       document.addEventListener(ev, wake, { passive: true })
