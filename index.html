@@ -2,45 +2,526 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-
   <title>Portafolio Diana Ramírez</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="Portafolio de Diana Ramírez — Realizador Cinematográfico y Audiovisual">
+  <meta name="theme-color" content="#000000">
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- FAVICONS (COMPATIBLE CON CHROME, OPERA, SAFARI, MOBILE) -->
+  <!-- FAVICONS -->
   <link rel="icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
   <link rel="apple-touch-icon" href="favicon-192.png">
 
+  <!-- Preconnect & font (tabular numerals para el contador estilo proyector) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
   <style>
+    :root {
+      --bg: #000;
+      --fg: #fff;
+      --muted: rgba(255, 255, 255, 0.55);
+      --control-bg: rgba(18, 18, 18, 0.78);
+      --control-border: rgba(255, 255, 255, 0.12);
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #000;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: pan-y;
+      overscroll-behavior: none;
     }
 
-    iframe {
-      width: 100vw;
-      height: 100vh;
+    /* Subtle vignette to enhance the "screening room" feel */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.5) 100%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    #viewer {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    #pdf-canvas {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      box-shadow: var(--shadow);
+      transition: opacity 0.25s ease;
+      display: block;
+    }
+
+    #pdf-canvas.swapping { opacity: 0; }
+
+    /* Loader */
+    #loader {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 36px;
+      height: 36px;
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      border-top-color: var(--fg);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 5;
+    }
+    #loader.active { opacity: 1; }
+    @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+    /* Controls bar */
+    #controls {
+      position: fixed;
+      bottom: max(20px, env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translate(-50%, 8px);
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: var(--control-bg);
+      backdrop-filter: blur(20px) saturate(140%);
+      -webkit-backdrop-filter: blur(20px) saturate(140%);
+      border: 1px solid var(--control-border);
+      border-radius: 999px;
+      padding: 6px;
+      z-index: 10;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    #controls.visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    #controls.idle {
+      opacity: 0.15;
+    }
+    #controls.idle:hover {
+      opacity: 1;
+    }
+
+    .btn {
+      background: transparent;
       border: none;
+      color: var(--fg);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.18s ease, transform 0.18s ease;
+      padding: 0;
+    }
+    .btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
+    .btn:active:not(:disabled) { transform: scale(0.92); }
+    .btn:disabled { opacity: 0.25; cursor: default; }
+    .btn svg {
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
+    }
+
+    .separator {
+      width: 1px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      margin: 0 4px;
+    }
+
+    #page-info {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      padding: 0 14px;
+      min-width: 64px;
+      text-align: center;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    #page-info .current { color: var(--fg); }
+
+    /* Click-to-navigate zones (desktop) */
+    .nav-zone {
+      position: fixed;
+      top: 0;
+      bottom: 80px;
+      width: 30%;
+      z-index: 3;
+      cursor: pointer;
+      background: transparent;
+    }
+    #nav-prev { left: 0; }
+    #nav-next { right: 0; }
+
+    @media (hover: hover) and (pointer: fine) {
+      .nav-zone::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 44px;
+        height: 44px;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 24px;
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        opacity: 0;
+        transition: opacity 0.3s ease, background-color 0.2s ease;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+      #nav-prev::after {
+        left: 32px;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='15 18 9 12 15 6'/></svg>");
+      }
+      #nav-next::after {
+        right: 32px;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='9 18 15 12 9 6'/></svg>");
+      }
+      .nav-zone:hover::after {
+        opacity: 1;
+        background-color: rgba(255, 255, 255, 0.12);
+      }
+      .nav-zone.disabled { pointer-events: none; }
+      .nav-zone.disabled::after { display: none; }
+    }
+
+    /* Hide click zones on touch devices (use swipe) */
+    @media (hover: none), (max-width: 768px) {
+      .nav-zone { display: none; }
+    }
+
+    /* Error state */
+    #error {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      padding: 24px;
+      display: none;
+      z-index: 20;
+    }
+    #error.active { display: block; }
+    #error p { margin: 8px 0; color: var(--muted); }
+    #error a {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 10px 20px;
+      color: var(--fg);
+      text-decoration: none;
+      border: 1px solid var(--control-border);
+      border-radius: 999px;
+      transition: background 0.2s;
+    }
+    #error a:hover { background: rgba(255, 255, 255, 0.08); }
+
+    /* First-load hint */
+    #hint {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      z-index: 9;
+      white-space: nowrap;
+    }
+    #hint.visible { opacity: 1; }
+
+    @media (max-width: 768px) {
+      #controls { padding: 4px; }
+      .btn { width: 36px; height: 36px; }
+      .separator { display: none; }
+      #page-info { padding: 0 10px; font-size: 11px; min-width: 56px; }
     }
   </style>
-
-  <!-- REDIRECCIÓN AUTOMÁTICA EN MÓVIL -->
-  <script>
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isMobile) {
-      window.location.replace("portafolio-diana-ramirez.pdf");
-    }
-  </script>
 </head>
 
 <body>
-  <!-- DESKTOP: PDF FULLSCREEN -->
-  <iframe src="portafolio-diana-ramirez.pdf"></iframe>
+  <div id="viewer">
+    <canvas id="pdf-canvas"></canvas>
+  </div>
+
+  <div id="loader"></div>
+
+  <div id="error">
+    <p>No se pudo cargar el portafolio.</p>
+    <a href="portafolio-diana-ramirez.pdf" download>Descargar PDF</a>
+  </div>
+
+  <div class="nav-zone" id="nav-prev" aria-label="Página anterior"></div>
+  <div class="nav-zone" id="nav-next" aria-label="Página siguiente"></div>
+
+  <div id="hint">← →   navegar   ·   F   pantalla completa</div>
+
+  <div id="controls" role="toolbar" aria-label="Controles del portafolio">
+    <button class="btn" id="prev-btn" aria-label="Anterior">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span id="page-info"><span class="current">—</span> / —</span>
+    <button class="btn" id="next-btn" aria-label="Siguiente">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <span class="separator"></span>
+    <button class="btn" id="fullscreen-btn" aria-label="Pantalla completa">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+    </button>
+    <a class="btn" id="download-btn" href="portafolio-diana-ramirez.pdf" download aria-label="Descargar PDF">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </a>
+  </div>
+
+  <!-- PDF.js (legacy build for broad browser support) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    const PDF_URL = 'portafolio-diana-ramirez.pdf';
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const loader = document.getElementById('loader');
+    const errorEl = document.getElementById('error');
+    const controls = document.getElementById('controls');
+    const hint = document.getElementById('hint');
+    const pageInfo = document.getElementById('page-info');
+    const currentEl = pageInfo.querySelector('.current');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const fsBtn = document.getElementById('fullscreen-btn');
+    const navPrev = document.getElementById('nav-prev');
+    const navNext = document.getElementById('nav-next');
+
+    let pdfDoc = null;
+    let currentPage = 1;
+    let totalPages = 0;
+    let pageRendering = false;
+    let pendingPage = null;
+    let renderTask = null;
+
+    function updateUI() {
+      currentEl.textContent = currentPage;
+      pageInfo.lastChild.textContent = ' / ' + totalPages;
+      prevBtn.disabled = currentPage <= 1;
+      nextBtn.disabled = currentPage >= totalPages;
+      navPrev.classList.toggle('disabled', currentPage <= 1);
+      navNext.classList.toggle('disabled', currentPage >= totalPages);
+    }
+
+    async function renderPage(num, animate = true) {
+      if (pageRendering) {
+        pendingPage = num;
+        if (renderTask) {
+          try { renderTask.cancel(); } catch (e) {}
+        }
+        return;
+      }
+      pageRendering = true;
+      loader.classList.add('active');
+      if (animate) canvas.classList.add('swapping');
+
+      try {
+        const page = await pdfDoc.getPage(num);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        const baseViewport = page.getViewport({ scale: 1 });
+
+        // Fit page inside viewport while maintaining aspect ratio
+        const padding = 32; // breathing room
+        const availW = window.innerWidth - padding * 2;
+        const availH = window.innerHeight - padding * 2;
+        const scale = Math.min(availW / baseViewport.width, availH / baseViewport.height);
+
+        const viewport = page.getViewport({ scale: scale * dpr });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.style.width = (viewport.width / dpr) + 'px';
+        canvas.style.height = (viewport.height / dpr) + 'px';
+
+        renderTask = page.render({ canvasContext: ctx, viewport });
+        await renderTask.promise;
+
+        // Small delay for the fade-in to feel smooth
+        await new Promise(r => requestAnimationFrame(r));
+        canvas.classList.remove('swapping');
+        updateUI();
+      } catch (err) {
+        if (err?.name !== 'RenderingCancelledException') {
+          console.error('Error rendering page:', err);
+        }
+      } finally {
+        pageRendering = false;
+        loader.classList.remove('active');
+        if (pendingPage !== null && pendingPage !== num) {
+          const next = pendingPage;
+          pendingPage = null;
+          renderPage(next);
+        } else {
+          pendingPage = null;
+        }
+      }
+    }
+
+    function goToPage(num) {
+      if (num < 1 || num > totalPages || num === currentPage) return;
+      currentPage = num;
+      renderPage(currentPage);
+    }
+    const nextPage = () => goToPage(currentPage + 1);
+    const prevPage = () => goToPage(currentPage - 1);
+
+    async function loadPDF() {
+      try {
+        loader.classList.add('active');
+        pdfDoc = await pdfjsLib.getDocument(PDF_URL).promise;
+        totalPages = pdfDoc.numPages;
+        await renderPage(currentPage, false);
+        controls.classList.add('visible');
+
+        // Show hint briefly on first load (desktop)
+        if (window.matchMedia('(hover: hover)').matches) {
+          setTimeout(() => hint.classList.add('visible'), 600);
+          setTimeout(() => hint.classList.remove('visible'), 4500);
+        }
+      } catch (err) {
+        console.error('Error loading PDF:', err);
+        loader.classList.remove('active');
+        errorEl.classList.add('active');
+      }
+    }
+
+    // Button & zone listeners
+    prevBtn.addEventListener('click', prevPage);
+    nextBtn.addEventListener('click', nextPage);
+    navPrev.addEventListener('click', prevPage);
+    navNext.addEventListener('click', nextPage);
+
+    fsBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      } else {
+        document.exitFullscreen?.();
+      }
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      switch (e.key) {
+        case 'ArrowRight':
+        case 'PageDown':
+        case ' ':
+          e.preventDefault(); nextPage(); break;
+        case 'ArrowLeft':
+        case 'PageUp':
+          e.preventDefault(); prevPage(); break;
+        case 'Home':
+          e.preventDefault(); goToPage(1); break;
+        case 'End':
+          e.preventDefault(); goToPage(totalPages); break;
+        case 'f':
+        case 'F':
+          fsBtn.click(); break;
+      }
+    });
+
+    // Swipe navigation (touch)
+    let touchStartX = 0, touchStartY = 0, touchStartT = 0;
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchStartT = Date.now();
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      const dt = Date.now() - touchStartT;
+      // Accept fast horizontal swipe OR larger slow swipe
+      if (Math.abs(dx) > Math.abs(dy) && (Math.abs(dx) > 60 || (dt < 300 && Math.abs(dx) > 40))) {
+        if (dx < 0) nextPage();
+        else prevPage();
+      }
+    }, { passive: true });
+
+    // Wheel/scroll navigation (debounced, throttled)
+    let wheelAccum = 0;
+    let wheelTimer = null;
+    let wheelCooldown = false;
+    document.addEventListener('wheel', (e) => {
+      if (wheelCooldown) return;
+      wheelAccum += e.deltaY;
+      clearTimeout(wheelTimer);
+      wheelTimer = setTimeout(() => { wheelAccum = 0; }, 120);
+      if (Math.abs(wheelAccum) > 80) {
+        if (wheelAccum > 0) nextPage();
+        else prevPage();
+        wheelAccum = 0;
+        wheelCooldown = true;
+        setTimeout(() => { wheelCooldown = false; }, 350);
+      }
+    }, { passive: true });
+
+    // Re-render on resize (debounced)
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (pdfDoc) renderPage(currentPage, false);
+      }, 180);
+    });
+
+    // Idle controls (auto-dim after 3s of no movement)
+    let idleTimer;
+    function wakeControls() {
+      controls.classList.remove('idle');
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => controls.classList.add('idle'), 3000);
+    }
+    ['mousemove', 'touchstart', 'keydown'].forEach(ev =>
+      document.addEventListener(ev, wakeControls, { passive: true })
+    );
+    wakeControls();
+
+    // Go
+    loadPDF();
+  </script>
 </body>
 </html>
