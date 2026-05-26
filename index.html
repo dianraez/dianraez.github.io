@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Portafolio Diana Ramírez</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Portafolio de Diana Ramírez — Realizador Cinematográfico y Audiovisual">
   <meta name="theme-color" content="#000000">
 
@@ -13,7 +13,6 @@
   <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
   <link rel="apple-touch-icon" href="favicon-192.png">
 
-  <!-- Preconnect & font (tabular numerals para el contador estilo proyector) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -34,20 +33,22 @@
       margin: 0;
       padding: 0;
       width: 100%;
-      height: 100%;
-      overflow: hidden;
       background: var(--bg);
       color: var(--fg);
       font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      -webkit-user-select: none;
-      user-select: none;
       -webkit-tap-highlight-color: transparent;
-      touch-action: pan-y;
-      overscroll-behavior: none;
     }
 
-    /* Subtle vignette to enhance the "screening room" feel */
-    body::before {
+    /* ---------- DESKTOP MODE (slide presentation) ---------- */
+    body.desktop-mode {
+      height: 100%;
+      overflow: hidden;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    body.desktop-mode html { height: 100%; }
+
+    body.desktop-mode::before {
       content: '';
       position: fixed;
       inset: 0;
@@ -56,7 +57,7 @@
       z-index: 2;
     }
 
-    #viewer {
+    body.desktop-mode #viewer {
       position: fixed;
       inset: 0;
       display: flex;
@@ -66,18 +67,69 @@
       z-index: 1;
     }
 
-    #pdf-canvas {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
+    body.desktop-mode .page-wrapper {
+      position: relative;
       box-shadow: var(--shadow);
       transition: opacity 0.25s ease;
-      display: block;
+    }
+    body.desktop-mode .page-wrapper.swapping { opacity: 0; }
+
+    /* ---------- MOBILE MODE (vertical scroll) ---------- */
+    body.mobile-mode {
+      min-height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
-    #pdf-canvas.swapping { opacity: 0; }
+    body.mobile-mode #viewer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 0 24px;
+      gap: 8px;
+      width: 100%;
+    }
 
-    /* Loader */
+    body.mobile-mode .page-wrapper {
+      position: relative;
+      max-width: 100%;
+      background: #0a0a0a;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    /* ---------- COMMON: canvas + annotation layer ---------- */
+    .page-wrapper canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .annotation-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none; /* solo los <a> hijos reciben clics */
+    }
+
+    .pdf-link {
+      position: absolute;
+      display: block;
+      pointer-events: auto;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0.15);
+    }
+    @media (hover: hover) {
+      .pdf-link:hover {
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+      }
+    }
+
+    /* ---------- Loader ---------- */
     #loader {
       position: fixed;
       top: 50%;
@@ -92,12 +144,12 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s;
-      z-index: 5;
+      z-index: 50;
     }
     #loader.active { opacity: 1; }
     @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
 
-    /* Controls bar */
+    /* ---------- Desktop controls bar ---------- */
     #controls {
       position: fixed;
       bottom: max(20px, env(safe-area-inset-bottom));
@@ -112,21 +164,16 @@
       border: 1px solid var(--control-border);
       border-radius: 999px;
       padding: 6px;
-      z-index: 10;
+      z-index: 30;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
       opacity: 0;
       transition: opacity 0.5s ease, transform 0.5s ease;
     }
-    #controls.visible {
-      opacity: 1;
-      transform: translate(-50%, 0);
-    }
-    #controls.idle {
-      opacity: 0.15;
-    }
-    #controls.idle:hover {
-      opacity: 1;
-    }
+    #controls.visible { opacity: 1; transform: translate(-50%, 0); }
+    #controls.idle { opacity: 0.15; }
+    #controls.idle:hover { opacity: 1; }
+
+    body.mobile-mode #controls { display: none; }
 
     .btn {
       background: transparent;
@@ -141,15 +188,12 @@
       justify-content: center;
       transition: background 0.18s ease, transform 0.18s ease;
       padding: 0;
+      text-decoration: none;
     }
     .btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
     .btn:active:not(:disabled) { transform: scale(0.92); }
     .btn:disabled { opacity: 0.25; cursor: default; }
-    .btn svg {
-      width: 18px;
-      height: 18px;
-      pointer-events: none;
-    }
+    .btn svg { width: 18px; height: 18px; pointer-events: none; }
 
     .separator {
       width: 1px;
@@ -171,60 +215,48 @@
     }
     #page-info .current { color: var(--fg); }
 
-    /* Click-to-navigate zones (desktop) */
-    .nav-zone {
+    /* ---------- Mobile floating download ---------- */
+    #mobile-dl {
+      display: none;
       position: fixed;
-      top: 0;
-      bottom: 80px;
-      width: 30%;
-      z-index: 3;
-      cursor: pointer;
-      background: transparent;
+      top: max(12px, env(safe-area-inset-top));
+      right: max(12px, env(safe-area-inset-right));
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--control-bg);
+      backdrop-filter: blur(20px) saturate(140%);
+      -webkit-backdrop-filter: blur(20px) saturate(140%);
+      border: 1px solid var(--control-border);
+      color: var(--fg);
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      z-index: 30;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
     }
-    #nav-prev { left: 0; }
-    #nav-next { right: 0; }
+    #mobile-dl svg { width: 18px; height: 18px; }
+    body.mobile-mode #mobile-dl { display: flex; }
 
-    @media (hover: hover) and (pointer: fine) {
-      .nav-zone::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 44px;
-        height: 44px;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: 24px;
-        background-color: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
-        opacity: 0;
-        transition: opacity 0.3s ease, background-color 0.2s ease;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-      }
-      #nav-prev::after {
-        left: 32px;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='15 18 9 12 15 6'/></svg>");
-      }
-      #nav-next::after {
-        right: 32px;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='9 18 15 12 9 6'/></svg>");
-      }
-      .nav-zone:hover::after {
-        opacity: 1;
-        background-color: rgba(255, 255, 255, 0.12);
-      }
-      .nav-zone.disabled { pointer-events: none; }
-      .nav-zone.disabled::after { display: none; }
+    /* ---------- Hint ---------- */
+    #hint {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      z-index: 29;
+      white-space: nowrap;
     }
+    #hint.visible { opacity: 1; }
+    body.mobile-mode #hint { display: none; }
 
-    /* Hide click zones on touch devices (use swipe) */
-    @media (hover: none), (max-width: 768px) {
-      .nav-zone { display: none; }
-    }
-
-    /* Error state */
+    /* ---------- Error ---------- */
     #error {
       position: fixed;
       top: 50%;
@@ -233,7 +265,7 @@
       text-align: center;
       padding: 24px;
       display: none;
-      z-index: 20;
+      z-index: 60;
     }
     #error.active { display: block; }
     #error p { margin: 8px 0; color: var(--muted); }
@@ -248,37 +280,11 @@
       transition: background 0.2s;
     }
     #error a:hover { background: rgba(255, 255, 255, 0.08); }
-
-    /* First-load hint */
-    #hint {
-      position: fixed;
-      bottom: 90px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 12px;
-      color: var(--muted);
-      letter-spacing: 0.05em;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.5s ease;
-      z-index: 9;
-      white-space: nowrap;
-    }
-    #hint.visible { opacity: 1; }
-
-    @media (max-width: 768px) {
-      #controls { padding: 4px; }
-      .btn { width: 36px; height: 36px; }
-      .separator { display: none; }
-      #page-info { padding: 0 10px; font-size: 11px; min-width: 56px; }
-    }
   </style>
 </head>
 
 <body>
-  <div id="viewer">
-    <canvas id="pdf-canvas"></canvas>
-  </div>
+  <div id="viewer"></div>
 
   <div id="loader"></div>
 
@@ -287,12 +293,10 @@
     <a href="portafolio-diana-ramirez.pdf" download>Descargar PDF</a>
   </div>
 
-  <div class="nav-zone" id="nav-prev" aria-label="Página anterior"></div>
-  <div class="nav-zone" id="nav-next" aria-label="Página siguiente"></div>
-
   <div id="hint">← →   navegar   ·   F   pantalla completa</div>
 
-  <div id="controls" role="toolbar" aria-label="Controles del portafolio">
+  <!-- Desktop controls (hidden on mobile) -->
+  <div id="controls" role="toolbar" aria-label="Controles">
     <button class="btn" id="prev-btn" aria-label="Anterior">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
@@ -309,15 +313,22 @@
     </a>
   </div>
 
-  <!-- PDF.js (legacy build for broad browser support) -->
+  <!-- Mobile floating download -->
+  <a id="mobile-dl" href="portafolio-diana-ramirez.pdf" download aria-label="Descargar PDF">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  </a>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     const PDF_URL = 'portafolio-diana-ramirez.pdf';
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    const canvas = document.getElementById('pdf-canvas');
-    const ctx = canvas.getContext('2d', { alpha: false });
+    // Detect mobile / touch — decided once on load
+    const isMobile = window.matchMedia('(max-width: 900px), (pointer: coarse)').matches;
+    document.body.classList.add(isMobile ? 'mobile-mode' : 'desktop-mode');
+
+    const viewer = document.getElementById('viewer');
     const loader = document.getElementById('loader');
     const errorEl = document.getElementById('error');
     const controls = document.getElementById('controls');
@@ -327,99 +338,317 @@
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
     const fsBtn = document.getElementById('fullscreen-btn');
-    const navPrev = document.getElementById('nav-prev');
-    const navNext = document.getElementById('nav-next');
 
     let pdfDoc = null;
-    let currentPage = 1;
     let totalPages = 0;
-    let pageRendering = false;
-    let pendingPage = null;
-    let renderTask = null;
+    const DPR = Math.min(window.devicePixelRatio || 1, 2.5);
 
-    function updateUI() {
-      currentEl.textContent = currentPage;
-      pageInfo.lastChild.textContent = ' / ' + totalPages;
-      prevBtn.disabled = currentPage <= 1;
-      nextBtn.disabled = currentPage >= totalPages;
-      navPrev.classList.toggle('disabled', currentPage <= 1);
-      navNext.classList.toggle('disabled', currentPage >= totalPages);
+    // ---------- Annotation rendering (shared) ----------
+    async function renderAnnotations(page, displayViewport, layerEl) {
+      layerEl.innerHTML = '';
+      const annotations = await page.getAnnotations();
+
+      for (const ann of annotations) {
+        if (ann.subtype !== 'Link') continue;
+
+        const a = document.createElement('a');
+        a.className = 'pdf-link';
+
+        // External URL
+        if (ann.url) {
+          a.href = ann.url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+        }
+        // Internal destination (link to another page within the PDF)
+        else if (ann.dest) {
+          a.href = '#';
+          a.addEventListener('click', async (e) => {
+            e.preventDefault();
+            try {
+              const dest = typeof ann.dest === 'string'
+                ? await pdfDoc.getDestination(ann.dest)
+                : ann.dest;
+              if (dest && dest[0]) {
+                const pageIndex = await pdfDoc.getPageIndex(dest[0]);
+                if (typeof goToPage === 'function') goToPage(pageIndex + 1);
+                else {
+                  // mobile: scroll to that page
+                  const target = document.querySelector(`.page-wrapper[data-page="${pageIndex + 1}"]`);
+                  target?.scrollIntoView({ behavior: 'smooth' });
+                }
+              }
+            } catch (err) { console.error(err); }
+          });
+        } else {
+          continue;
+        }
+
+        // Convert PDF coords to viewport coords
+        const r = pdfjsLib.Util.normalizeRect(
+          displayViewport.convertToViewportRectangle(ann.rect)
+        );
+        const left = r[0];
+        const top = r[1];
+        const width = r[2] - r[0];
+        const height = r[3] - r[1];
+
+        // Express as percentages so they stay aligned if the wrapper resizes
+        a.style.left = (left / displayViewport.width * 100) + '%';
+        a.style.top = (top / displayViewport.height * 100) + '%';
+        a.style.width = (width / displayViewport.width * 100) + '%';
+        a.style.height = (height / displayViewport.height * 100) + '%';
+
+        layerEl.appendChild(a);
+      }
     }
 
-    async function renderPage(num, animate = true) {
-      if (pageRendering) {
-        pendingPage = num;
-        if (renderTask) {
-          try { renderTask.cancel(); } catch (e) {}
-        }
-        return;
-      }
-      pageRendering = true;
-      loader.classList.add('active');
-      if (animate) canvas.classList.add('swapping');
+    // ---------- Render a single page into its wrapper ----------
+    async function renderPageInto(pageNum, wrapper, fitMode) {
+      const page = await pdfDoc.getPage(pageNum);
+      const canvas = wrapper.querySelector('canvas');
+      const annLayer = wrapper.querySelector('.annotation-layer');
+      const ctx = canvas.getContext('2d', { alpha: false });
 
-      try {
-        const page = await pdfDoc.getPage(num);
-        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-        const baseViewport = page.getViewport({ scale: 1 });
+      const baseViewport = page.getViewport({ scale: 1 });
 
-        // Fit page inside viewport while maintaining aspect ratio
-        const padding = 32; // breathing room
+      let displayWidth, displayHeight;
+      if (fitMode === 'width') {
+        // Mobile: fit container width
+        const containerW = viewer.clientWidth || window.innerWidth;
+        displayWidth = Math.min(containerW, baseViewport.width * 1.5); // cap at 1.5x to avoid huge canvases
+        displayHeight = (baseViewport.height / baseViewport.width) * displayWidth;
+      } else {
+        // Desktop: fit both dimensions
+        const padding = 32;
         const availW = window.innerWidth - padding * 2;
         const availH = window.innerHeight - padding * 2;
         const scale = Math.min(availW / baseViewport.width, availH / baseViewport.height);
+        displayWidth = baseViewport.width * scale;
+        displayHeight = baseViewport.height * scale;
+      }
 
-        const viewport = page.getViewport({ scale: scale * dpr });
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        canvas.style.width = (viewport.width / dpr) + 'px';
-        canvas.style.height = (viewport.height / dpr) + 'px';
+      const dispScale = displayWidth / baseViewport.width;
+      const displayViewport = page.getViewport({ scale: dispScale });
+      const renderViewport = page.getViewport({ scale: dispScale * DPR });
 
-        renderTask = page.render({ canvasContext: ctx, viewport });
-        await renderTask.promise;
+      canvas.width = renderViewport.width;
+      canvas.height = renderViewport.height;
+      canvas.style.width = displayWidth + 'px';
+      canvas.style.height = displayHeight + 'px';
 
-        // Small delay for the fade-in to feel smooth
-        await new Promise(r => requestAnimationFrame(r));
-        canvas.classList.remove('swapping');
-        updateUI();
+      wrapper.style.width = displayWidth + 'px';
+      wrapper.style.height = displayHeight + 'px';
+
+      // Cancel any in-flight render on this wrapper
+      if (wrapper._renderTask) {
+        try { wrapper._renderTask.cancel(); } catch (e) {}
+      }
+      wrapper._renderTask = page.render({ canvasContext: ctx, viewport: renderViewport });
+
+      try {
+        await wrapper._renderTask.promise;
+        await renderAnnotations(page, displayViewport, annLayer);
       } catch (err) {
-        if (err?.name !== 'RenderingCancelledException') {
-          console.error('Error rendering page:', err);
-        }
+        if (err?.name !== 'RenderingCancelledException') throw err;
       } finally {
-        pageRendering = false;
-        loader.classList.remove('active');
-        if (pendingPage !== null && pendingPage !== num) {
-          const next = pendingPage;
-          pendingPage = null;
-          renderPage(next);
-        } else {
-          pendingPage = null;
-        }
+        wrapper._renderTask = null;
       }
     }
 
-    function goToPage(num) {
-      if (num < 1 || num > totalPages || num === currentPage) return;
-      currentPage = num;
-      renderPage(currentPage);
-    }
-    const nextPage = () => goToPage(currentPage + 1);
-    const prevPage = () => goToPage(currentPage - 1);
+    // ============================================================
+    //   DESKTOP MODE  (single page slide)
+    // ============================================================
+    let currentPage = 1;
+    let goToPage = null;
 
-    async function loadPDF() {
+    async function setupDesktop() {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'page-wrapper';
+      wrapper.innerHTML = '<canvas></canvas><div class="annotation-layer"></div>';
+      viewer.appendChild(wrapper);
+
+      let rendering = false;
+      let pending = null;
+
+      async function render(num) {
+        if (rendering) { pending = num; return; }
+        rendering = true;
+        loader.classList.add('active');
+        wrapper.classList.add('swapping');
+
+        try {
+          await renderPageInto(num, wrapper, 'contain');
+          await new Promise(r => requestAnimationFrame(r));
+          wrapper.classList.remove('swapping');
+          currentEl.textContent = num;
+          pageInfo.lastChild.textContent = ' / ' + totalPages;
+          prevBtn.disabled = num <= 1;
+          nextBtn.disabled = num >= totalPages;
+        } finally {
+          rendering = false;
+          loader.classList.remove('active');
+          if (pending !== null && pending !== num) {
+            const next = pending; pending = null;
+            render(next);
+          } else {
+            pending = null;
+          }
+        }
+      }
+
+      goToPage = (num) => {
+        if (num < 1 || num > totalPages || num === currentPage) return;
+        currentPage = num;
+        render(currentPage);
+      };
+      const nextPage = () => goToPage(currentPage + 1);
+      const prevPage = () => goToPage(currentPage - 1);
+
+      await render(1);
+      controls.classList.add('visible');
+
+      // First-load hint
+      setTimeout(() => hint.classList.add('visible'), 600);
+      setTimeout(() => hint.classList.remove('visible'), 4500);
+
+      // Buttons
+      prevBtn.addEventListener('click', prevPage);
+      nextBtn.addEventListener('click', nextPage);
+      fsBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(()=>{});
+        else document.exitFullscreen?.();
+      });
+
+      // Keyboard
+      document.addEventListener('keydown', (e) => {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        switch (e.key) {
+          case 'ArrowRight': case 'PageDown': case ' ':
+            e.preventDefault(); nextPage(); break;
+          case 'ArrowLeft': case 'PageUp':
+            e.preventDefault(); prevPage(); break;
+          case 'Home':
+            e.preventDefault(); goToPage(1); break;
+          case 'End':
+            e.preventDefault(); goToPage(totalPages); break;
+          case 'f': case 'F':
+            fsBtn.click(); break;
+        }
+      });
+
+      // Wheel (debounced) — counts as intentional, doesn't conflict with link clicks
+      let wheelAccum = 0, wheelTimer = null, wheelCD = false;
+      document.addEventListener('wheel', (e) => {
+        if (wheelCD) return;
+        wheelAccum += e.deltaY;
+        clearTimeout(wheelTimer);
+        wheelTimer = setTimeout(() => { wheelAccum = 0; }, 120);
+        if (Math.abs(wheelAccum) > 80) {
+          if (wheelAccum > 0) nextPage(); else prevPage();
+          wheelAccum = 0;
+          wheelCD = true;
+          setTimeout(() => { wheelCD = false; }, 350);
+        }
+      }, { passive: true });
+
+      // Resize → re-render
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => render(currentPage), 180);
+      });
+
+      // Idle controls
+      let idleTimer;
+      function wake() {
+        controls.classList.remove('idle');
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => controls.classList.add('idle'), 3000);
+      }
+      ['mousemove', 'keydown'].forEach(ev =>
+        document.addEventListener(ev, wake, { passive: true })
+      );
+      wake();
+    }
+
+    // ============================================================
+    //   MOBILE MODE  (all pages stacked, lazy-rendered)
+    // ============================================================
+    async function setupMobile() {
+      // Get page-1 dimensions to set placeholder aspect ratio
+      const firstPage = await pdfDoc.getPage(1);
+      const v = firstPage.getViewport({ scale: 1 });
+      const aspect = v.width / v.height;
+
+      const containerW = viewer.clientWidth || window.innerWidth;
+      const placeholderW = Math.min(containerW, v.width * 1.5);
+      const placeholderH = placeholderW / aspect;
+
+      // Create placeholders for all pages
+      for (let i = 1; i <= totalPages; i++) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'page-wrapper';
+        wrapper.dataset.page = i;
+        wrapper.style.width = placeholderW + 'px';
+        wrapper.style.height = placeholderH + 'px';
+        wrapper.innerHTML = '<canvas></canvas><div class="annotation-layer"></div>';
+        viewer.appendChild(wrapper);
+      }
+
+      loader.classList.remove('active');
+
+      // Lazy render with IntersectionObserver
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !entry.target.dataset.rendered) {
+            const w = entry.target;
+            w.dataset.rendered = 'pending';
+            renderPageInto(parseInt(w.dataset.page), w, 'width')
+              .then(() => { w.dataset.rendered = 'done'; })
+              .catch((err) => {
+                console.error(err);
+                w.dataset.rendered = ''; // allow retry
+              });
+          }
+        }
+      }, { rootMargin: '600px 0px' });
+
+      viewer.querySelectorAll('.page-wrapper').forEach(w => observer.observe(w));
+
+      // Re-render on resize/orientation change
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          // Recompute placeholder dimensions and re-render
+          const newW = Math.min(viewer.clientWidth || window.innerWidth, v.width * 1.5);
+          const newH = newW / aspect;
+          viewer.querySelectorAll('.page-wrapper').forEach(w => {
+            if (w.dataset.rendered === 'done') {
+              w.dataset.rendered = '';
+              renderPageInto(parseInt(w.dataset.page), w, 'width')
+                .then(() => { w.dataset.rendered = 'done'; });
+            } else if (!w.dataset.rendered) {
+              w.style.width = newW + 'px';
+              w.style.height = newH + 'px';
+            }
+          });
+        }, 250);
+      });
+    }
+
+    // ============================================================
+    //   INIT
+    // ============================================================
+    async function init() {
       try {
         loader.classList.add('active');
         pdfDoc = await pdfjsLib.getDocument(PDF_URL).promise;
         totalPages = pdfDoc.numPages;
-        await renderPage(currentPage, false);
-        controls.classList.add('visible');
 
-        // Show hint briefly on first load (desktop)
-        if (window.matchMedia('(hover: hover)').matches) {
-          setTimeout(() => hint.classList.add('visible'), 600);
-          setTimeout(() => hint.classList.remove('visible'), 4500);
-        }
+        if (isMobile) await setupMobile();
+        else await setupDesktop();
       } catch (err) {
         console.error('Error loading PDF:', err);
         loader.classList.remove('active');
@@ -427,101 +656,7 @@
       }
     }
 
-    // Button & zone listeners
-    prevBtn.addEventListener('click', prevPage);
-    nextBtn.addEventListener('click', nextPage);
-    navPrev.addEventListener('click', prevPage);
-    navNext.addEventListener('click', nextPage);
-
-    fsBtn.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen?.().catch(() => {});
-      } else {
-        document.exitFullscreen?.();
-      }
-    });
-
-    // Keyboard navigation
-    document.addEventListener('keydown', (e) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      switch (e.key) {
-        case 'ArrowRight':
-        case 'PageDown':
-        case ' ':
-          e.preventDefault(); nextPage(); break;
-        case 'ArrowLeft':
-        case 'PageUp':
-          e.preventDefault(); prevPage(); break;
-        case 'Home':
-          e.preventDefault(); goToPage(1); break;
-        case 'End':
-          e.preventDefault(); goToPage(totalPages); break;
-        case 'f':
-        case 'F':
-          fsBtn.click(); break;
-      }
-    });
-
-    // Swipe navigation (touch)
-    let touchStartX = 0, touchStartY = 0, touchStartT = 0;
-    document.addEventListener('touchstart', (e) => {
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-      touchStartT = Date.now();
-    }, { passive: true });
-
-    document.addEventListener('touchend', (e) => {
-      const dx = e.changedTouches[0].clientX - touchStartX;
-      const dy = e.changedTouches[0].clientY - touchStartY;
-      const dt = Date.now() - touchStartT;
-      // Accept fast horizontal swipe OR larger slow swipe
-      if (Math.abs(dx) > Math.abs(dy) && (Math.abs(dx) > 60 || (dt < 300 && Math.abs(dx) > 40))) {
-        if (dx < 0) nextPage();
-        else prevPage();
-      }
-    }, { passive: true });
-
-    // Wheel/scroll navigation (debounced, throttled)
-    let wheelAccum = 0;
-    let wheelTimer = null;
-    let wheelCooldown = false;
-    document.addEventListener('wheel', (e) => {
-      if (wheelCooldown) return;
-      wheelAccum += e.deltaY;
-      clearTimeout(wheelTimer);
-      wheelTimer = setTimeout(() => { wheelAccum = 0; }, 120);
-      if (Math.abs(wheelAccum) > 80) {
-        if (wheelAccum > 0) nextPage();
-        else prevPage();
-        wheelAccum = 0;
-        wheelCooldown = true;
-        setTimeout(() => { wheelCooldown = false; }, 350);
-      }
-    }, { passive: true });
-
-    // Re-render on resize (debounced)
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        if (pdfDoc) renderPage(currentPage, false);
-      }, 180);
-    });
-
-    // Idle controls (auto-dim after 3s of no movement)
-    let idleTimer;
-    function wakeControls() {
-      controls.classList.remove('idle');
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => controls.classList.add('idle'), 3000);
-    }
-    ['mousemove', 'touchstart', 'keydown'].forEach(ev =>
-      document.addEventListener(ev, wakeControls, { passive: true })
-    );
-    wakeControls();
-
-    // Go
-    loadPDF();
+    init();
   </script>
 </body>
 </html>
