@@ -100,6 +100,34 @@
       }
     }
 
+    /* Toast (temporary message) */
+    #toast {
+      position: fixed;
+      top: max(20px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translate(-50%, -16px);
+      background: rgba(20, 20, 20, 0.92);
+      backdrop-filter: blur(20px) saturate(140%);
+      -webkit-backdrop-filter: blur(20px) saturate(140%);
+      border: 1px solid var(--control-border);
+      color: var(--fg);
+      padding: 12px 18px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.4;
+      z-index: 100;
+      max-width: calc(100% - 32px);
+      text-align: center;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    #toast.visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
     /* Loader */
     #loader {
       position: fixed;
@@ -314,6 +342,7 @@
 <body>
   <div id="viewer"></div>
   <div id="loader"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
 
   <div id="error">
     <p>No se pudo cargar el portafolio.</p>
@@ -416,28 +445,36 @@
         return result instanceof Promise ? result : Promise.resolve();
       } catch (e) { return Promise.reject(e); }
     }
-    function toggleFs() {
-      if (getFsElement()) {
-        exitFs().catch(() => {});
-      } else {
-        requestFs(document.documentElement).catch((err) => {
-          console.warn('Fullscreen falló:', err?.message || err);
-        });
+    async function toggleFs() {
+      // On iOS, fullscreen for divs doesn't really work — give a useful hint instead
+      if (isIOS) {
+        showToast('En iPhone: toca Compartir → "Agregar a inicio" para verlo sin barras');
+        return;
+      }
+      try {
+        if (getFsElement()) {
+          await exitFs();
+        } else {
+          await requestFs(document.documentElement);
+        }
+      } catch (err) {
+        showToast('Pantalla completa no disponible en este navegador');
       }
     }
 
-    // Detect if fullscreen is realistically supported (iOS Safari often returns
-    // a function that throws — we test by checking the property's existence,
-    // and we'll silently no-op on failure)
-    const fsSupported = !!(
-      document.documentElement.requestFullscreen ||
-      document.documentElement.webkitRequestFullscreen ||
-      document.documentElement.mozRequestFullScreen ||
-      document.documentElement.msRequestFullscreen
-    );
-    if (!fsSupported) {
-      // Hide both fullscreen buttons (desktop + mobile) if truly unsupported
-      document.querySelectorAll('.btn-fullscreen').forEach(b => b.style.display = 'none');
+    // iOS detection — fullscreen API is unreliable on iPhone (both Safari & Chrome
+    // use WebKit by Apple's rules), so we show a helpful message instead
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    // Toast helper (small temporary message at the top of the screen)
+    const toastEl = document.getElementById('toast');
+    let toastTimer;
+    function showToast(msg, duration = 4500) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('visible');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('visible'), duration);
     }
 
     // ---------- Annotation layer (PDF links) ----------
